@@ -75,6 +75,11 @@ export class App extends gfx.GfxApp
         this.robotArm.createGeometry();
         this.scene.add(this.robotArm);
 
+        // Keep the arm upright with bones extending along local negative Z
+        this.robotArm.rotation.setRotationX(
+            gfx.MathUtils.degreesToRadians(90)
+        );
+
         this.robotArm.bones.get("upperArm")!.rotation.setRotationZ(
             gfx.MathUtils.degreesToRadians(-10)
         );
