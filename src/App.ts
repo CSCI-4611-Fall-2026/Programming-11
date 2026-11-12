@@ -8,11 +8,15 @@ import * as gfx from 'gophergfx'
 import { GUI } from 'dat.gui'
 
 import { RobotArm } from './RobotArm';
+import { Animation } from './animation/Animation';
+import { Keyframe } from './animation/Keyframe';
 
 export class App extends gfx.GfxApp
 {
     private cameraControls: gfx.OrbitControls;
     private robotArm: RobotArm;
+    private animation: Animation;
+    private playbackTime: number;
 
     public upperArmRotate: number;
     public upperArmBend: number;
@@ -28,6 +32,8 @@ export class App extends gfx.GfxApp
         this.cameraControls = new gfx.OrbitControls(this.camera);
 
         this.robotArm = new RobotArm();
+        this.animation = new Animation();
+        this.playbackTime = -1;
 
         this.upperArmRotate = 0;
         this.upperArmBend = 0;
@@ -138,6 +144,9 @@ export class App extends gfx.GfxApp
                 gfx.MathUtils.degreesToRadians(this.lowerArmBend),
             );
          });
+
+         gui.add(this, 'createKeyframe').name('Create Keyframe');
+         gui.add(this, 'playAnimation').name('Play Animation');
     }
 
     
@@ -145,5 +154,67 @@ export class App extends gfx.GfxApp
     update(deltaTime: number): void 
     {
         this.cameraControls.update(deltaTime);
+
+        const fps = 1;
+
+        // A negative playback time means the animation is stopped.
+        if(this.playbackTime >= 0)
+        {
+            this.playbackTime += deltaTime;
+            const lastFrame = this.animation.frames.length - 1;
+
+            // Convert elapsed seconds to a fractional frame index and clamp
+            // it to the final keyframe so playback cannot run past the end.
+            const fractionalFrame = Math.min(this.playbackTime * fps, lastFrame);
+
+            // Find the two keyframes surrounding the current playback time.
+            const currentFrame = Math.floor(fractionalFrame);
+            const nextFrame = Math.min(currentFrame + 1, lastFrame);
+            
+            // The fractional part gives the blend weight: 0 is the current
+            // keyframe, and values approaching 1 move toward the next one.
+            const alpha = fractionalFrame - currentFrame;
+
+            // Interpolate a copy so the recorded keyframes stay unchanged.
+            const pose = this.animation.frames[currentFrame].clone();
+
+            // Keyframe.lerp blends positions linearly and rotations with slerp.
+            pose.lerp(this.animation.frames[nextFrame], alpha);
+
+            // Apply each blended joint rotation to its corresponding bone.
+            this.robotArm.bones.forEach((bone, name) => {
+                bone.rotation.copy(pose.getJointRotation(name));
+            });
+
+            // Stop at the end, leaving the arm in the final recorded pose.
+            if(fractionalFrame == lastFrame)
+                this.playbackTime = -1;
+        }
+    }
+
+    public createKeyframe(): void
+    {
+        // Give the new pose the next index in the animation's frame sequence.
+        const pose = new Keyframe();
+        pose.frame = this.animation.frames.length;
+
+        // Save each bone's local rotation by name. Clone the quaternion so
+        // later changes to the arm do not change the recorded pose.
+        this.robotArm.bones.forEach((bone, name) => {
+            pose.setJointRotation(name, bone.rotation.clone());
+        });
+
+        // Append the pose so keyframes play in the order they were recorded.
+        this.animation.appendKeyframe(pose);
+    }
+
+    public playAnimation(): void
+    {
+        // Start playback only when at least one pose has been recorded.
+        if(this.animation.frames.length > 0)
+        {
+            // Reset elapsed time to start (or restart) at the first keyframe.
+            this.playbackTime = 0;
+        }
     }
 }
