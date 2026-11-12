@@ -5,6 +5,7 @@
  */ 
 
 import * as gfx from 'gophergfx'
+import { GUI } from 'dat.gui'
 
 import { RobotArm } from './RobotArm';
 
@@ -12,6 +13,11 @@ export class App extends gfx.GfxApp
 {
     private cameraControls: gfx.OrbitControls;
     private robotArm: RobotArm;
+
+    public upperArmRotate: number;
+    public upperArmBend: number;
+    public middleArmBend: number;
+    public lowerArmBend: number;
 
     // --- Create the App class ---
     constructor()
@@ -22,6 +28,11 @@ export class App extends gfx.GfxApp
         this.cameraControls = new gfx.OrbitControls(this.camera);
 
         this.robotArm = new RobotArm();
+
+        this.upperArmRotate = 0;
+        this.upperArmBend = 0;
+        this.middleArmBend = 0;
+        this.lowerArmBend = 0;
     }
 
 
@@ -80,17 +91,53 @@ export class App extends gfx.GfxApp
             gfx.MathUtils.degreesToRadians(90)
         );
 
-        this.robotArm.bones.get("upperArm")!.rotation.setRotationZ(
-            gfx.MathUtils.degreesToRadians(-10)
-        );
+        // Create the GUI
+        const gui = new GUI();
 
-        this.robotArm.bones.get("middleArm")!.rotation.setRotationZ(
-            gfx.MathUtils.degreesToRadians(-30)
-        );
+        const upperArmControls = gui.addFolder('Upper Arm Controls');
+        upperArmControls.open();
 
-        this.robotArm.bones.get("lowerArm")!.rotation.setRotationZ(
-            gfx.MathUtils.degreesToRadians(-45)
-        );
+        const upperRotateController = upperArmControls.add(this, 'upperArmRotate', -180, 180);
+        upperRotateController.name('rotate');
+        upperRotateController.onChange((value: number) => { 
+             this.robotArm.bones.get("upperArm")!.rotation.setEulerAngles(
+                gfx.MathUtils.degreesToRadians(this.upperArmBend),
+                0, 
+                gfx.MathUtils.degreesToRadians(this.upperArmRotate)
+            );
+        });
+
+        const upperBendController = upperArmControls.add(this, 'upperArmBend', -45, 45);
+        upperBendController.name('bend');
+        upperBendController.onChange((value: number) => { 
+            this.robotArm.bones.get("upperArm")!.rotation.setEulerAngles(
+                gfx.MathUtils.degreesToRadians(this.upperArmBend),
+                gfx.MathUtils.degreesToRadians(0), 
+                gfx.MathUtils.degreesToRadians(this.upperArmRotate)
+            );
+         });
+
+        const middleArmControls = gui.addFolder('Middle Arm Controls');
+        middleArmControls.open();
+
+        const middleBendController = middleArmControls.add(this, 'middleArmBend', -135, 135);
+        middleBendController.name('bend');
+        middleBendController.onChange((value: number) => { 
+            this.robotArm.bones.get("middleArm")!.rotation.setRotationX(
+                gfx.MathUtils.degreesToRadians(this.middleArmBend)
+            );
+        });
+
+        const lowerArmControls = gui.addFolder('Lower Arm Controls');
+        lowerArmControls.open();
+
+        const lowerBendController = lowerArmControls.add(this, 'lowerArmBend', -135, 135);
+        lowerBendController.name('bend');
+        lowerBendController.onChange((value: number) => { 
+            this.robotArm.bones.get("lowerArm")!.rotation.setRotationX(
+                gfx.MathUtils.degreesToRadians(this.lowerArmBend),
+            );
+         });
     }
 
     
