@@ -79,18 +79,6 @@ export class App extends gfx.GfxApp
         this.robotArm.rotation.setRotationX(
             gfx.MathUtils.degreesToRadians(90)
         );
-
-        this.robotArm.bones.get("upperArm")!.rotation.setRotationZ(
-            gfx.MathUtils.degreesToRadians(-10)
-        );
-
-        this.robotArm.bones.get("middleArm")!.rotation.setRotationZ(
-            gfx.MathUtils.degreesToRadians(-30)
-        );
-
-        this.robotArm.bones.get("lowerArm")!.rotation.setRotationZ(
-            gfx.MathUtils.degreesToRadians(-45)
-        );
     }
 
     
