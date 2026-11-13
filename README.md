@@ -1,4 +1,4 @@
-# Programming 11: Animation
+# Programming 11: Hierarchical Transforms, Part 2
 
 The latest commit will be the finished code at the end of class.  If you are intending to implement this program while watching the lecture video, you should checkout the commit labeled `pre-class commit`  to get the starter code.
 
